@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eGrading - Upload Model Answer Key</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .file-drop-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            height: 200px;
+            max-width: 100%;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            background-color: #f9fafb;
+        }
+        
+        .file-drop-area.is-active {
+            background-color: #e0f2fe;
+            border-color: #3b82f6;
+        }
+        
+        .fake-btn {
+            flex-shrink: 0;
+            background-color: #4f46e5;
+            color: white;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .fake-btn:hover {
+            background-color: #4338ca;
+        }
+        
+        .file-msg {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            cursor: pointer;
+            opacity: 0;
+        }
+        
+        .file-input:focus ~ .file-drop-area {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        
+        .format-example {
+            background-color: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            font-family: monospace;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .format-property {
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        
+        .format-value {
+            color: #047857;
+        }
+        
+        .format-punct {
+            color: #6b7280;
+        }
+        
+        .success-animation {
+            animation: fadeInUp 0.4s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .hover-scale {
+            transition: transform 0.2s ease;
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-indigo-700 to-purple-800 shadow-md">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fas fa-graduation-cap text-white text-2xl mr-3"></i>
+                    <h1 class="text-white font-bold text-xl">eGrading System</h1>
+                </div>
+                <nav class="flex space-x-4">
+                    <a href="/" class="text-indigo-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                    <a href="/upload-answer-key" class="bg-indigo-900 text-white px-3 py-2 rounded-md text-sm font-medium">Answer Key</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex items-center mb-6">
+                <div class="bg-indigo-100 rounded-full p-3 mr-4">
+                    <i class="fas fa-key text-indigo-600 text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Upload Model Answer Key</h2>
+                    <p class="text-gray-600">Upload a text file containing question-answer pairs for automatic grading</p>
+                </div>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Answer Key File (.txt)</label>
+                    
+                    <div class="file-drop-area flex flex-col justify-center items-center" id="dropArea">
+                        <i class="fas fa-cloud-upload-alt text-gray-400 text-4xl mb-3"></i>
+                        <span class="fake-btn">Select File</span>
+                        <span class="file-msg">or drag and drop file here</span>
+                        <input type="file" class="file-input" name="keyfile" accept=".txt" required id="fileInput">
+                    </div>
+                    <p class="text-gray-500 text-sm mt-2" id="fileDetails">No file selected</p>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <a href="/" class="inline-flex items-center text-indigo-600 hover:text-indigo-800">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Answer Sheet Upload
+                    </a>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md shadow-sm flex items-center">
+                        <i class="fas fa-save mr-2"></i>
+                        Upload & Save
+                    </button>
+                </div>
+            </form>
+
+            {% if success %}
+            <div class="mt-6 bg-green-50 border-l-4 border-green-500 p-4 rounded success-animation">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-green-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-700 font-medium">Answer key saved successfully!</p>
+                        <p class="text-sm text-green-600 mt-1">Your answer key is now ready for grading sheets.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Format Guide Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Answer Key Format Guide</h3>
+            
+            <div class="mb-4">
+                <p class="text-gray-700 mb-3">Upload a text file with each line containing a question and its answer separated by a colon:</p>
+                <div class="format-example">
+                    <div>Question 1: Paris</div>
+                    <div>Question 2: Hydrogen</div>
+                    <div>Question 3: 1945</div>
+                    <div>Question 4: Mitochondria</div>
+                    <div>...</div>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6 mt-8">
+                <div class="bg-indigo-50 p-4 rounded-lg hover-scale">
+                    <h4 class="font-bold text-indigo-800 mb-2">JSON Format Alternative</h4>
+                    <p class="text-gray-700 mb-3">For more complex answer keys, you can also use a JSON structure:</p>
+                    <div class="format-example">
+                        <div><span class="format-punct">{</span></div>
+                        <div>  <span class="format-property">"Question 1"</span><span class="format-punct">:</span> <span class="format-value">"Paris"</span><span class="format-punct">,</span></div>
+                        <div>  <span class="format-property">"Question 2"</span><span class="format-punct">:</span> <span class="format-value">"Hydrogen"</span><span class="format-punct">,</span></div>
+                        <div>  <span class="format-property">"Question 3"</span><span class="format-punct">:</span> <span class="format-value">"1945"</span><span class="format-punct">,</span></div>
+                        <div>  <span class="format-property">"Multiple Choice 1"</span><span class="format-punct">:</span> <span class="format-value">"B"</span></div>
+                        <div><span class="format-punct">}</span></div>
+                    </div>
+                </div>
+                
+                <div class="bg-purple-50 p-4 rounded-lg hover-scale">
+                    <h4 class="font-bold text-purple-800 mb-2">Tips for Better Recognition</h4>
+                    <ul class="text-gray-700 list-disc pl-5 space-y-2">
+                        <li>Use consistent formatting for all questions</li>
+                        <li>Keep answers concise and precise</li>
+                        <li>For multiple acceptable answers, separate with commas</li>
+                        <li>Use full words rather than abbreviations when possible</li>
+                        <li>Ensure the text file is in UTF-8 encoding</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12 py-8">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="md:flex md:justify-between">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center">
+                        <i class="fas fa-graduation-cap text-2xl mr-2"></i>
+                        <span class="font-bold text-xl">eGrading System</span>
+                    </div>
+                    <p class="text-gray-400 mt-2 text-sm">Automated grading for handwritten answer sheets</p>
+                </div>
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-300 tracking-wider uppercase mb-4">Quick Links</h3>
+                        <ul class="space-y-2">
+                            <li><a href="/" class="text-gray-400 hover:text-white">Home</a></li>
+                            <li><a href="/upload-answer-key" class="text-gray-400 hover:text-white">Upload Answer Key</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-300 tracking-wider uppercase mb-4">Support</h3>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white">Documentation</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white">Help Center</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-gray-700 pt-8 md:flex md:items-center md:justify-between">
+                <p class="text-gray-400 text-sm">&copy; 2025 eGrading System. All rights reserved.</p>
+                <div class="flex mt-4 md:mt-0 space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // File upload handling with drag and drop
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileDetails = document.getElementById('fileDetails');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            dropArea.classList.add('is-active');
+        }
+        
+        function unhighlight() {
+            dropArea.classList.remove('is-active');
+        }
+        
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileDetails(files[0]);
+        }
+        
+        fileInput.addEventListener('change', function() {
+            if (this.files.length) {
+                updateFileDetails(this.files[0]);
+            }
+        });
+        
+        function updateFileDetails(file) {
+            if (file) {
+                const fileName = file.name;
+                const fileSize = (file.size / 1024).toFixed(2);
+                fileDetails.innerHTML = `
+                    <div class="flex items-center text-sm">
+                        <i class="far fa-file-alt text-indigo-500 mr-2"></i>
+                        <span class="font-medium text-gray-700">${fileName}</span>
+                        <span class="ml-2 text-gray-500">(${fileSize} KB)</span>
+                    </div>
+                `;
+                
+                // Read file to preview content
+                if (file.type === "text/plain" && file.size < 100000) { // Only for text files under 100KB
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const content = e.target.result;
+                        const lines = content.split('\n').slice(0, 3); // Show first 3 lines
+                        
+                        if (lines.length > 0) {
+                            let previewHTML = '<div class="mt-3 text-xs text-gray-600">';
+                            previewHTML += '<p class="font-medium mb-1">Preview:</p>';
+                            previewHTML += '<div class="bg-gray-100 p-2 rounded overflow-hidden">';
+                            
+                            lines.forEach(line => {
+                                previewHTML += `<div>${line}</div>`;
+                            });
+                            
+                            if (content.split('\n').length > 3) {
+                                previewHTML += '<div>...</div>';
+                            }
+                            
+                            previewHTML += '</div></div>';
+                            
+                            fileDetails.innerHTML += previewHTML;
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            } else {
+                fileDetails.textContent = 'No file selected';
+            }
+        }
+    </script>
+</body>
+</html>
